@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mysql:8
+    container_name: mysqldb
+    restart: always
+    environment:
+      MYSQL_DATABASE: veterinary_ambulance
+      MYSQL_ROOT_PASSWORD: wdm40!
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+    container_name: pet_clinic_backend
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DB_NAME=veterinary_ambulance
+      - DB_USER=root
+      - DB_PASSWORD=wdm40!
+      - DB_HOST=db
+      - DB_PORT=3306
+    ports:
+      - '8000:8000'
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    depends_on:
+      - backend
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/staticfiles:ro
+
+volumes:
+  db_data:
+  static_volume:
